@@ -1,4 +1,4 @@
-# 客户 SLA 未达分析工具（Streamlit）
+# 客户 SLA 未达分析工具
 
 这是一个基于 Streamlit 的网页分析工具，用于客户 SLA 未达情况分析。
 用户只需要上传 Excel 文件，在网页中设置 SLA should date 和 cut-off 时间，即可自动生成分析结果，并下载 Excel 报告。
