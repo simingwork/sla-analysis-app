@@ -309,9 +309,9 @@ def run_analysis(
                 return("DSP压单", "配送")
         elif row["耗时_配送站入库→司机领件"] > 8:
             if row["耗时_配送站入库→司机领件"] >32:
-                return("DSP严重压单（需警告）", "配送")
+                return("DSP严重压单（需警告）/飘件, "配送")
             else:
-                return("DSP压单", "配送")
+                return("DSP压单/飘件", "配送")
         else:
             if pd.isna(row["耗时_司机领件→首次派送"]):
                 if hours_diff_values(cut_off, row["司机首次领件时间"]) > 48:
@@ -499,12 +499,17 @@ def run_analysis(
         ["集配站", "占比_numeric"],
         ascending=[True, False]
     )
-    summary_by_hub["占客户总单量比"] = (
+    summary_by_hub["占总单量比"] = (
         summary_by_hub["占比_numeric"] * 100
     ).round(2).astype(str) + "%"
     summary_by_hub = summary_by_hub.drop(columns=["占比_numeric"])
     
+    hub_overall = summary_by_hub.sort_values("问题单量", ascending=False)[
+        ["集配站", "站点总单量", "问题单量", "占总单量比"]
+    ]
+    
     hub_sla_summary = {}
+    hub_sta_summary = {}
     
     for hub, group in df.groupby("集配站"):
         total_h = len(group)
@@ -523,6 +528,37 @@ def run_analysis(
             "success_rate": success_rate,
             "fail_rate": fail_h / total_h if total_h > 0 else np.nan,
         }
+
+        hub_df = df[df["集配站"] == hub].copy()
+        # === 新增：by 配送站的问题明细（保留配送站为空） ===
+        station_total = (
+            hub_df["配送站"]
+            .value_counts()
+            .rename_axis("配送站")
+            .reset_index(name="配送站总单量")
+        )
+        
+        station_summary = (
+            hub_df
+            .groupby(
+                ["配送站", "链路问题归因", "主要责任方"],
+                dropna=False
+            )
+            .size()
+            .reset_index(name="问题单量")
+        )
+        
+        station_summary = station_summary.merge(station_total, on="配送站", how="left")
+        station_summary["占比_numeric"] = station_summary["问题单量"] / station_summary["配送站总单量"]
+        station_summary = station_summary.sort_values(
+            ["配送站", "占比_numeric"],
+            ascending=[True, False]
+        )
+        station_summary["占总单量比"] = (
+            station_summary["占比_numeric"] * 100
+        ).round(2).astype(str) + "%"
+        station_summary = station_summary.drop(columns=["占比_numeric"])
+        hub_sta_summary[hub] = station_summary
     
     # ===== 4. Output results as an excel =====
     output_file = f"SLA_分析完成.xlsx"
@@ -540,6 +576,8 @@ def run_analysis(
         overall_info.to_excel(writer, sheet_name="整体问题归因统计", index=False, startrow=0)
         start_row = len(overall_info) + 2
         summary_all.to_excel(writer, sheet_name="整体问题归因统计", index=False, startrow=start_row)
+        start_row = start_row + len(summary_all) + 2
+        hub_overall.to_excel(writer, sheet_name="整体问题归因统计", index=False, startrow=start_row)
     
         ws = writer.sheets["整体问题归因统计"]
         ws.set_column(0, max(summary_all.shape[1], overall_info.shape[1]) - 1, 18)
@@ -630,6 +668,8 @@ def run_analysis(
             info_df.to_excel(writer, sheet_name=sheet_name, index=False, startrow=0)
             start_row = len(info_df) + 2   # 空一行
             sub.to_excel(writer, sheet_name=sheet_name, index=False, startrow=start_row)
+            start_row = start_row + len(sub) + 2
+            hub_sta_summary[hub].to_excel(writer, sheet_name=sheet_name, index=False, startrow=start_row)
     
             ws = writer.sheets[sheet_name]
             ws.set_column(0, max(info_df.shape[1], sub.shape[1]) - 1, 18)
