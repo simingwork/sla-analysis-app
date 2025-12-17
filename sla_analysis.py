@@ -504,9 +504,19 @@ def run_analysis(
     ).round(2).astype(str) + "%"
     summary_by_hub = summary_by_hub.drop(columns=["占比_numeric"])
     
-    hub_overall = summary_by_hub.sort_values("问题单量", ascending=False)[
-        ["集配站", "站点总单量", "问题单量", "占总单量比"]
-    ]
+    # === 汇总到 集配站 级别（消除 duplicate） ===
+    hub_overall = (
+        summary_by_hub
+        .groupby("集配站", as_index=False)
+        .agg(
+            站点总单量=("站点总单量", "first"),   
+            问题单量=("问题单量", "sum")      
+        )
+    )
+    
+    hub_overall["占集配站总单量比"] = (
+        hub_overall["问题单量"] / hub_overall["站点总单量"] * 100
+    ).round(2).astype(str) + "%"
     
     hub_sla_summary = {}
     hub_sta_summary = {}
@@ -530,6 +540,7 @@ def run_analysis(
         }
 
         hub_df = df[df["集配站"] == hub].copy()
+        hub_fail_df = fail_df[fail_df["集配站"] == hub].copy()
         # === 新增：by 配送站的问题明细（保留配送站为空） ===
         station_total = (
             hub_df["配送站"]
@@ -539,7 +550,7 @@ def run_analysis(
         )
         
         station_summary = (
-            hub_df
+            hub_fail_df
             .groupby(
                 ["配送站", "链路问题归因", "主要责任方"],
                 dropna=False
@@ -549,16 +560,26 @@ def run_analysis(
         )
         
         station_summary = station_summary.merge(station_total, on="配送站", how="left")
-        station_summary["占比_numeric"] = station_summary["问题单量"] / station_summary["配送站总单量"]
+        station_summary["占比_numeric"] = station_summary["问题单量"] / station_summary["配送站总单量"].replace(0, np.nan)
         station_summary = station_summary.sort_values(
             ["配送站", "占比_numeric"],
             ascending=[True, False]
         )
-        station_summary["占总单量比"] = (
+        station_summary["占配送站总单量比"] = (
             station_summary["占比_numeric"] * 100
-        ).round(2).astype(str) + "%"
+        ).round(2).fillna(0).astype(str) + "%"
         station_summary = station_summary.drop(columns=["占比_numeric"])
-        hub_sta_summary[hub] = station_summary
+        
+        station_summary_display = station_summary.copy()
+
+        # 让相邻重复的“配送站”显示为空（只保留第一行）
+        same_as_prev = station_summary_display["配送站"].eq(station_summary_display["配送站"].shift())
+        
+        # 处理 NaN：如果当前和上一行都是空，也算重复
+        same_nan_as_prev = station_summary_display["配送站"].isna() & station_summary_display["配送站"].shift().isna()
+        
+        station_summary_display.loc[same_as_prev | same_nan_as_prev, "配送站"] = ""
+        hub_sta_summary[hub] = station_summary_display
     
     # ===== 4. Output results as an excel =====
     output_file = f"SLA_分析完成.xlsx"
@@ -649,7 +670,7 @@ def run_analysis(
                 info_df = pd.DataFrame(info_rows, columns=["指标", "值"])
                 info_df.to_excel(writer, sheet_name=hub, index=False)
                 ws = writer.sheets[hub]
-                ws.set_column(0, info_df.shape[1]-1, 18)
+                ws.set_column(0, info_df.shape[1], 18)
                 continue
     
             # Have Fail Order
