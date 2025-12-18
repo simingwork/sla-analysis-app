@@ -670,7 +670,7 @@ def run_analysis(
                 info_df = pd.DataFrame(info_rows, columns=["指标", "值"])
                 info_df.to_excel(writer, sheet_name=hub, index=False)
                 ws = writer.sheets[hub]
-                ws.set_column(0, info_df.shape[1], 18)
+                ws.set_column(0, info_df.shape[1] - 1, 18)
                 continue
     
             # Have Fail Order
@@ -693,7 +693,7 @@ def run_analysis(
             hub_sta_summary[hub].to_excel(writer, sheet_name=sheet_name, index=False, startrow=start_row)
     
             ws = writer.sheets[sheet_name]
-            ws.set_column(0, max(info_df.shape[1], sub.shape[1]) - 1, 18)
+            ws.set_column(0, max(info_df.shape[1], sub.shape[1]), 18)
             ws.set_column("A:A", 35)
     
     return {
