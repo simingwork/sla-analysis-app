@@ -64,10 +64,10 @@ def run_analysis(
         "TE": {
             "start_col": "首分拨首次入库时间",
             "end_col": "签收成功时间",
-            "hours_CA": 72,
-            "days_CA": 3, 
-            "hours_nonCA": 96,
-            "days_nonCA": 4, 
+            "hours_z12": 72,
+            "days_z12": 3, 
+            "hours_z34": 96,
+            "days_z34": 4, 
             "target_rate": 0.97,
             "mode": "narrow",
             "total_count": len(df['客户'] == 'TE')
@@ -86,6 +86,10 @@ def run_analysis(
     # CA order or not
     def not_CA_order(row) -> bool:
         return row["集配站"] in ["HUB_LAX_LAS", "HUB_LAX_PHX"]
+
+    # Zone 1 & 2 or not
+    def not_z12_order(row) -> bool:
+        return row["集配站"] in ["HUB_LAX_LAS", "HUB_LAX_PHX", "HUB_LAX_BAK", "HUB_LAX_SAC", "HUB_LAX_SFO", "HUB_LAX_UIC"]
     
     # SLA total hours by client and area
     def get_sla_limit_hours(row):
@@ -99,6 +103,11 @@ def run_analysis(
                 return cfg["hours_nonCA"]
             else:
                 return cfg["hours_CA"]
+        elif "hours_z12" in cfg:
+            if not_z12_order(row):
+                return cfg["hours_z12"]
+            else:
+                return cfg["hours_z34"]
                 
         return cfg.get("hours", np.nan)
     
@@ -114,7 +123,12 @@ def run_analysis(
                 return cfg["days_nonCA"]
             else:
                 return cfg["days_CA"]
-                
+        elif "days_z12" in cfg:
+            if not_z12_order(row):
+                return cfg["days_z12"]
+            else:
+                return cfg["days_z34"]
+        
         return cfg.get("days", np.nan)
     
     # Calculate time difference
