@@ -66,9 +66,9 @@ def run_analysis(
             "end_col": "签收成功时间",
             "hours_z12": 72,
             "days_z12": 3, 
-            "hours_z34": 96,
-            "days_z34": 4, 
-            "target_rate": 0.97,
+            "hours_z34": 120,
+            "days_z34": 5, 
+            "target_rate": 0.95,
             "mode": "narrow",
             "total_count": len(df['客户'] == 'TE')
         },
