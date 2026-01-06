@@ -80,7 +80,7 @@ def run_analysis(
             "target_rate": 0.95,
             "mode": "narrow",
             "total_count": len(df['客户'] == 'YW')
-        }
+        },
         "HTE": {
             "start_col": "首分拨首次入库时间",
             "end_col": "首次派送时间",
@@ -109,7 +109,7 @@ def run_analysis(
             "target_rate": 0.96,
             "mode": "narrow", # 狭义妥投
             "total_count": len(df['客户'] == 'WHUS-4PX')
-        },
+        }
     }
     
     # CA order or not
