@@ -39,7 +39,7 @@ def run_analysis(
             "end_col": "签收成功时间",
             "hours": 48,
             "days": 2, 
-            "target_rate": 0.90,
+            "target_rate": 0.95,
             "mode": "narrow",  # 狭义妥投
             "total_count": len(df['客户'] == 'FBT')
         },
@@ -81,6 +81,35 @@ def run_analysis(
             "mode": "narrow",
             "total_count": len(df['客户'] == 'YW')
         }
+        "HTE": {
+            "start_col": "首分拨首次入库时间",
+            "end_col": "首次派送时间",
+            "hours_CA": 72,
+            "days_CA": 3,
+            "hours_nonCA": 120,
+            "days_nonCA": 5,
+            "target_rate": 0.95,
+            "mode": "broad", # 广义妥投
+            "total_count": len(df['客户'] == 'HTE')
+        },
+        "WHUS": {
+            "start_col": "首分拨首次入库时间",
+            "end_col": "签收成功时间",
+            "hours": 120,
+            "days": 5,
+            "target_rate": 0.96,
+            "mode": "narrow", # 狭义妥投
+            "total_count": len(df['客户'] == 'WHUS')
+        },
+        "WHUS-4PX": {
+            "start_col": "首分拨首次入库时间",
+            "end_col": "签收成功时间",
+            "hours": 120,
+            "days": 5,
+            "target_rate": 0.96,
+            "mode": "narrow", # 狭义妥投
+            "total_count": len(df['客户'] == 'WHUS-4PX')
+        },
     }
     
     # CA order or not
@@ -154,7 +183,7 @@ def run_analysis(
         if pd.isna(start_time) or np.isnan(sla_hours):
             due_time = pd.NaT
         else:
-            if row["客户"] in ["FBT", "CBT", "AE"]:
+            if row["客户"] in ["FBT", "CBT", "AE", "HTE", "WHUS", "WHUS-4PX"]:
                 due_time = (start_time + timedelta(hours=float(sla_hours))).normalize() + pd.Timedelta(hours=23, minutes=59, seconds=59)
             else:
                 due_time = start_time + timedelta(hours=float(sla_hours))
@@ -231,7 +260,7 @@ def run_analysis(
         if i in df.columns:
             df[i] = pd.to_datetime(df[i], errors='coerce')
     
-    # Update SLA start time for customhouse time after 9pm
+    # Update AE SLA start time for customhouse time after 9pm
     df["SLA关配交接时间"] = df["关配交接时间"]
     
     mask_late = (df["客户"] == "AE") & df["关配交接时间"].notna() & (df["关配交接时间"].dt.hour >= 21)
@@ -280,7 +309,7 @@ def run_analysis(
         ok = total - fail
         rate = ok / total
         target = sla_config[client]["target_rate"]
-        if client in ["FBT", "SKA2", "YW", "TE"]:
+        if client in ["FBT", "SKA2", "YW", "TE", "WHUS", "WHUS-4PX"]:
             print(f"{client}: 总单量 {total}，狭义不达 {total - ok} 单，不达率 {(1-rate)*100:.2f}%")
         else:
             print(f"{client}: 总单量 {total}，广义不达 {total - ok} 单，不达率 {(1-rate)*100:.2f}%")
@@ -338,7 +367,7 @@ def run_analysis(
                 else:
                     return("DSP领件未及时投递", "配送")
             else:
-                if row["客户"] in ["FBT", "SKA2", "YW", "TE"]:
+                if row["客户"] in ["FBT", "SKA2", "YW", "TE", "WHUS", "WHUS-4PX"]:
                     if pd.isna(row["签收成功时间"]):
                         return ("DSP因某些原因未投递成功（需确认）", "配送")
                     elif row["耗时_司机领件→签收成功"] > 16:
