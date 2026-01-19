@@ -401,7 +401,7 @@ def run_analysis(
                             else:
                                 return missort_or_not(row)
                         else:
-                            if row["耗时_分拨出库→异常登记"] > 12:
+                            if row["耗时_分拨出库→异常登记"] > 15:
                                 if row["耗时_分拨出库→异常登记"] > 96:
                                     return ("仓配交接差异", "分拨")
                                 else:
@@ -412,7 +412,7 @@ def run_analysis(
                         if row["集配站"] == "HUB_LAX_COM":
                             return missort_or_not(row)
                         else:
-                            if row["耗时_分拨出库→配送站入库"] > 12:
+                            if row["耗时_分拨出库→配送站入库"] > 15:
                                 return missort_or_not(row)
                             else:
                                 return pickup_or_not(row)
