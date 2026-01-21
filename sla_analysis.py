@@ -700,8 +700,11 @@ def run_analysis(
                     ["目标达成率", f"{sla_info['target']*100:.0f}%" if sla_info and not np.isnan(sla_info["target"]) else "未配置"],
                     ["是否达标", "达标 ✔" if sla_info and sla_info["meet_target"] else "未达标 ❌"]
                 ]
+                
+                sheet_name = make_excel_sheet_name(client, used_sheet_names)
+                
                 info_df = pd.DataFrame(info_rows, columns=["指标", "值"])
-                info_df.to_excel(writer, sheet_name=client, index=False)
+                info_df.to_excel(writer, sheet_name=sheet_name, index=False)
                 ws = writer.sheets[client]
                 ws.set_column(0, info_df.shape[1]-1, 18)
                 continue
