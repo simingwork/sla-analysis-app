@@ -2,5 +2,5 @@ pandas
 numpy
 openpyxl
 xlsxwriter
-streamlit
-altair
+streamlit==1.41.0
+altair==5.5.0
