@@ -705,7 +705,7 @@ def run_analysis(
                 
                 info_df = pd.DataFrame(info_rows, columns=["指标", "值"])
                 info_df.to_excel(writer, sheet_name=sheet_name, index=False)
-                ws = writer.sheets[client]
+                ws = writer.sheets[sheet_name]
                 ws.set_column(0, info_df.shape[1]-1, 18)
                 continue
     
