@@ -3,3 +3,4 @@ numpy
 openpyxl
 xlsxwriter
 streamlit
+altair
