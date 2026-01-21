@@ -4,6 +4,42 @@ from datetime import datetime
 from datetime import timedelta
 import os
 from io import BytesIO
+import re
+
+def make_excel_sheet_name(raw_name, used_names: set, max_len: int = 31) -> str:
+    """
+    Excel sheet name rules:
+    - length <= 31
+    - cannot contain: : \ / ? * [ ]
+    - cannot be empty
+    - must be unique within workbook
+    """
+    name = "" if raw_name is None else str(raw_name)
+
+    # 把 nan 这种也兜住
+    if name.strip().lower() in {"", "nan", "none"}:
+        name = "未知客户"
+
+    # 替换非法字符
+    name = re.sub(r"[:\\/?*\[\]]", "_", name).strip()
+
+    # Excel 也不喜欢最后是单引号
+    name = name.strip("'").strip()
+    if not name:
+        name = "未知客户"
+
+    base = name[:max_len]
+
+    # 去重：如果已存在，就加 _2/_3...
+    candidate = base
+    i = 2
+    while candidate in used_names:
+        suffix = f"_{i}"
+        candidate = base[: max_len - len(suffix)] + suffix
+        i += 1
+
+    used_names.add(candidate)
+    return candidate
 
 def run_analysis(
     df,
@@ -648,6 +684,8 @@ def run_analysis(
         ws.set_column("A:A", 35)
     
         # By客户问题归因表
+        used_sheet_names = set(writer.sheets.keys())
+        
         for client in sorted(df["客户"].unique()):
             sub = summary_by_client[summary_by_client["客户"] == client].copy()
     
@@ -682,7 +720,8 @@ def run_analysis(
             info_df = pd.DataFrame(info_rows, columns=["指标", "值"])
             sub = sub.drop(columns=["客户"])
     
-            sheet_name = client
+            sheet_name = make_excel_sheet_name(client, used_sheet_names)
+            
             info_df.to_excel(writer, sheet_name=sheet_name, index=False, startrow=0)
             start_row = len(info_df) + 2   # 空一行
             sub.to_excel(writer, sheet_name=sheet_name, index=False, startrow=start_row)
