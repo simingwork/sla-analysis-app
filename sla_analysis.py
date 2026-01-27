@@ -247,9 +247,9 @@ def run_analysis(
         '面单号',
         '客户',
         '原集配站',
-        '集配站.1',
+        '集配站名称',
         '原配送站',
-        '配送站.1',
+        '配送站名称',
         '段码',
         '收件人邮编',
         '分拨大包号',
@@ -273,8 +273,8 @@ def run_analysis(
     # Filter and raname
     columns_existing = [c for c in columns_needed if c in df.columns]
     df = df[columns_existing].rename(columns={
-        '集配站.1': '集配站',
-        '配送站.1': '配送站'
+        '集配站名称': '集配站',
+        '配送站名称': '配送站'
     })
     
     # Unify time cols format
