@@ -381,7 +381,7 @@ def run_analysis(
                 return ("飘件/包裹在配送站丢失（须严查原因）", "配送")
             else:
                 return("DSP严重压单（需警告）/飘件", "配送")
-        elif (row["配送站"] == "HUB_LAX_COM" and row["耗时_配送站入库→司机领件"] > 12):
+        elif (row["集配站"] == "HUB_LAX_COM" and row["耗时_配送站入库→司机领件"] > 12):
             if row["耗时_配送站入库→司机领件"] >36:
                 return("DSP严重压单（需警告）/飘件", "配送")
             else:
