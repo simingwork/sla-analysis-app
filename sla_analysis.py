@@ -638,6 +638,8 @@ def run_analysis(
             .reset_index(name="问题单量")
         )
         
+        station_summary["配送站"] = station_summary["配送站"].astype("string").str.strip()
+        station_total["配送站"] = station_total["配送站"].astype("string").str.strip()
         station_summary = station_summary.merge(station_total, on="配送站", how="left")
         station_summary["占比_numeric"] = station_summary["问题单量"] / station_summary["配送站总单量"].replace(0, np.nan)
         station_summary = station_summary.sort_values(
