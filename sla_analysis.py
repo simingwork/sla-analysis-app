@@ -308,7 +308,7 @@ def run_analysis(
     # Update AE SLA start time for customhouse time after 9pm
     df["SLA关配交接时间"] = df["关配交接时间"]
     
-    mask_late = (df["客户"] == "AE") & df["关配交接时间"].notna() & (df["关配交接时间"].dt.time > pd.to_datetime("21:00:00").time())
+    mask_late = (df["客户"] == "AE") & df["关配交接时间"].notna() & (df["关配交接时间"] > pd.to_datetime("21:00:00"))
     df.loc[mask_late, "SLA关配交接时间"] = (
         df.loc[mask_late, "关配交接时间"].dt.normalize() + pd.Timedelta(days=1)
     )
