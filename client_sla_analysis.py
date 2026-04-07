@@ -300,7 +300,7 @@ def run_analysis(
     })
 
     # Add Zone Info
-    sla_zone_df = pd.read_excel("sla_zone.xlsx".sheet_name=="邮编映射")
+    sla_zone_df = pd.read_excel("sla_zone.xlsx", sheet_name="邮编映射")
     df = df.merge(sla_zone_df, on="收件人邮编", how="left")
     
     # Unify time cols format
