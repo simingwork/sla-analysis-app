@@ -41,7 +41,7 @@ def make_excel_sheet_name(raw_name, used_names: set, max_len: int = 31) -> str:
     used_names.add(candidate)
     return candidate
 
-def run_analysis(
+def run_cainiao_analysis(
     df,
     sla_should_date=None,
     cut_off=None
