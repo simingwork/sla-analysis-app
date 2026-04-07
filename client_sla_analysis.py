@@ -154,6 +154,19 @@ def run_analysis(
             "target_rate": 0.96,
             "mode": "narrow", # 狭义妥投
             "total_count": len(df['客户'] == 'WHUS-4PX')
+        }，
+        "CKY": {
+            "start_col": "首分拨首次入库时间",
+            "end_col": "签收成功时间",
+            "hours_z12": 72,
+            "days_z12": 3,
+            "hours_z34": 96,
+            "days_z34": 4,
+            "hours_z5": 192,
+            "days_z5": 8,
+            "target_rate": 0.95,
+            "mode": "narrow", # 狭义妥投
+            "total_count": len(df['客户'] == 'CKY')
         }
     }
     
@@ -161,9 +174,9 @@ def run_analysis(
     def not_CA_order(row) -> bool:
         return row["集配站"] in ["HUB_LAX_LAS", "HUB_LAX_PHX"]
 
-    # Zone 1 & 2 or not
-    def not_z12_order(row) -> bool:
-        return row["集配站"] in ["HUB_LAX_LAS", "HUB_LAX_PHX", "HUB_LAX_BAK", "HUB_LAX_SAC", "HUB_LAX_SFO", "HUB_LAX_UIC"]
+    # SLA Zone
+    def get_sla_zone(row):
+        return row["收件人邮编集"]
     
     # SLA total hours by client and area
     def get_sla_limit_hours(row):
@@ -178,7 +191,7 @@ def run_analysis(
             else:
                 return cfg["hours_CA"]
         elif "hours_z12" in cfg:
-            if not_z12_order(row):
+            if get_sla_zone(row) in ["Zone1", "Zone2"]:
                 return cfg["hours_z12"]
             else:
                 return cfg["hours_z34"]
@@ -228,7 +241,7 @@ def run_analysis(
         if pd.isna(start_time) or np.isnan(sla_hours):
             due_time = pd.NaT
         else:
-            if row["客户"] in ["FBT", "CBT", "AE", "HTE", "WHUS", "WHUS-4PX"]:
+            if row["客户"] in ["FBT", "CBT", "AE", "HTE", "WHUS", "WHUS-4PX", "CKY"]:
                 due_time = (start_time + timedelta(hours=float(sla_hours))).normalize() + pd.Timedelta(hours=23, minutes=59, seconds=59)
             else:
                 due_time = start_time + timedelta(hours=float(sla_hours))
@@ -285,6 +298,10 @@ def run_analysis(
         '集配站名称': '集配站',
         '配送站名称': '配送站'
     })
+
+    # Add Zone Info
+    sla_zone_df = pd.read_excel("sla_zone.xlsx".sheet_name="邮编映射")
+    df = df.merge(sla_zone_df, on="收件人邮编", how="left")
     
     # Unify time cols format
     time_cols=[
