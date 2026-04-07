@@ -154,7 +154,7 @@ def run_analysis(
             "target_rate": 0.96,
             "mode": "narrow", # 狭义妥投
             "total_count": len(df['客户'] == 'WHUS-4PX')
-        }，
+        },
         "CKY": {
             "start_col": "首分拨首次入库时间",
             "end_col": "签收成功时间",
