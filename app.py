@@ -3,8 +3,7 @@ import pandas as pd
 from io import BytesIO
 from datetime import datetime, date, time
 
-from client_sla_analysis import run_analysis
-from cainiao_sla_analysis import run_cainiao_analysis
+from sla_analysis import run_analysis
 
 st.set_page_config(page_title="客户SLA未达分析", layout="wide")
 
