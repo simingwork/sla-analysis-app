@@ -3,7 +3,8 @@ import pandas as pd
 from io import BytesIO
 from datetime import datetime, date, time
 
-from client_sla_analysis import run_analysis
+from client_sla_analysis import run_analysis as client_analysis
+from cainiao_sla_analysis import run_analysis as cainiao_analysis
 
 st.set_page_config(page_title="客户SLA未达分析", layout="wide")
 
@@ -28,10 +29,10 @@ uploaded_files = st.file_uploader(
 col1, col2 = st.columns(2)
 
 with col1:
-    mode = st.radio("SLA should date 设置方式", ["时间段", "单个时间点"], horizontal=True)
+    sla_type = st.radio("SLA要求", ["中台SLA", "客户SLA"], horizontal=True)
 
 with col2:
-    st.write("")
+    mode = st.radio("SLA should date 设置方式", ["时间段", "单个时间点"], horizontal=True)
 
 sla_range = None
 
@@ -80,11 +81,18 @@ if run_btn:
     st.success(f"已加载 {len(uploaded_files)} 个文件，合并后行数：{len(df_all):,}")
 
     with st.spinner("运行分析逻辑..."):
-        result = run_analysis(
-            df_all,
-            sla_should_date=sla_range,
-            cut_off=cut_off,
-        )
+        if sla_type == "中台SLA":
+            result = cainiao_analysis(
+                df_all,
+                sla_should_date=sla_range,
+                cut_off=cut_off,
+            )
+        else:
+            result = client_analysis(
+                df_all,
+                sla_should_date=sla_range,
+                cut_off=cut_off,
+            )
 
     # result 约定返回：{"output_bytes": bytes, "filename": str, "preview": {...可选...}}
     output_bytes = result["output_bytes"]
