@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta, time
 import os
 from io import BytesIO
 import re
@@ -50,7 +49,7 @@ def run_analysis(
     sla_zone_df = pd.read_excel("sla_zone.xlsx", sheet_name="邮编映射")
     df = df.merge(sla_zone_df, on="收件人邮编", how="left")
     
-    # Client side SLA requirements
+    # Zone SLA requirements
     sla_config = {
         "Zone1": {
             "start_col": "首分拨首次入库时间",
@@ -87,6 +86,130 @@ def run_analysis(
             "target_rate": 0.95,
             "mode": "broad",
             "total_count": len(df["收件人邮编集"] == "Zone4")
+        }
+    }
+
+    # Client side SLA requirements
+    client_config = {
+        "AE": {
+            "start_col": "SLA关配交接时间",
+            "end_col": "首次派送时间",
+            "hours_CA": 48,
+            "days_CA": 2,
+            "hours_nonCA": 96,
+            "days_nonCA": 4,
+            "target_rate": 0.95,
+            "mode": "broad", # 广义妥投
+            "total_count": len(df['客户'] == 'AE')
+        },
+        "CBO": {
+            "start_col": "首分拨首次入库时间",
+            "end_col": "首次派送时间",
+            "hours_CA": 72,
+            "days_CA": 3,
+            "hours_nonCA": 96,
+            "days_nonCA": 4,
+            "target_rate": 0.95,
+            "mode": "broad",
+            "total_count": len(df['客户'] == 'CBO')
+        },
+        "FBT": {
+            "start_col": "首分拨首次入库时间",
+            "end_col": "签收成功时间",
+            "hours": 48,
+            "days": 2, 
+            "target_rate": 0.95,
+            "mode": "narrow",  # 狭义妥投
+            "total_count": len(df['客户'] == 'FBT')
+        },
+        "CBT": {
+            "start_col": "首分拨首次入库时间",
+            "end_col": "首次派送时间",
+            "hours": 72,
+            "days": 3, 
+            "target_rate": 0.95,
+            "mode": "narrow",
+            "total_count": len(df['客户'] == 'CBT')
+        },
+        "SKA2": {
+            "start_col": "SLA关配交接时间",
+            "end_col": "签收成功时间",
+            "hours": 120,
+            "days": 5, 
+            "target_rate": 0.98,
+            "mode": "narrow",
+            "total_count": len(df['客户'] == 'SKA2')
+        },
+        "TE": {
+            "start_col": "首分拨首次入库时间",
+            "end_col": "签收成功时间",
+            "hours_z12": 72,
+            "days_z12": 3, 
+            "hours_z34": 120,
+            "days_z34": 5, 
+            "target_rate": 0.95,
+            "mode": "narrow",
+            "total_count": len(df['客户'] == 'TE')
+        },
+        "YW": {
+            "start_col": "首分拨首次入库时间",
+            "end_col": "签收成功时间",
+            "hours": 84,
+            "days": 3, 
+            "target_rate": 0.95,
+            "mode": "narrow",
+            "total_count": len(df['客户'] == 'YW')
+        },
+        "HTE": {
+            "start_col": "首分拨首次入库时间",
+            "end_col": "首次派送时间",
+            "hours_CA": 72,
+            "days_CA": 3,
+            "hours_nonCA": 120,
+            "days_nonCA": 5,
+            "target_rate": 0.95,
+            "mode": "broad", # 广义妥投
+            "total_count": len(df['客户'] == 'HTE')
+        },
+        "WH": {
+            "start_col": "首分拨首次入库时间",
+            "end_col": "签收成功时间",
+            "hours": 120,
+            "days": 5,
+            "target_rate": 0.96,
+            "mode": "narrow", # 狭义妥投
+            "total_count": len(df['客户'] == 'WH')
+        },
+        "WHUS": {
+            "start_col": "首分拨首次入库时间",
+            "end_col": "签收成功时间",
+            "hours": 120,
+            "days": 5,
+            "target_rate": 0.96,
+            "mode": "narrow", # 狭义妥投
+            "total_count": len(df['客户'] == 'WHUS')
+        },
+        "WHUS-4PX": {
+            "start_col": "首分拨首次入库时间",
+            "end_col": "签收成功时间",
+            "hours": 120,
+            "days": 5,
+            "target_rate": 0.96,
+            "mode": "narrow", # 狭义妥投
+            "total_count": len(df['客户'] == 'WHUS-4PX')
+        },
+        "CKY": {
+            "start_col": "首分拨首次入库时间",
+            "end_col": "签收成功时间",
+            "hours_z12": 72,
+            "days_z12": 3,
+            "hours_z34": 96,
+            "days_z34": 4,
+            "hours_z5": 192,
+            "days_z5": 8,
+            "target_rate": 0.95,
+            "mode": "narrow", # 狭义妥投
+            "total_count": len(df['客户'] == 'CKY')
         }
     }
     
@@ -242,14 +365,14 @@ def run_analysis(
     ])
     df.insert(pos, '首分拨首次分拣时间', df.pop('首分拨首次分拣时间'))
     
-    zone_sla_summary = {}
+    client_sla_summary = {}
     
     for client, group in df.groupby("客户"):
         total = len(group)
         fail = (group["SLA是否达标"] == False).sum()
         ok = total - fail
         rate = ok / total
-        target = sla_config[client]["target_rate"]
+        target = client_config[client]["target_rate"]
         print(f"{client}: 总单量 {total}，广义不达 {total - ok} 单，不达率 {(1-rate)*100:.2f}%")
         
         client_sla_summary[client] = {
