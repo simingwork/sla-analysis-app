@@ -46,6 +46,10 @@ def run_analysis(
     sla_should_date=None,
     cut_off=None
 ):  
+    # Add Zone Info
+    sla_zone_df = pd.read_excel("sla_zone.xlsx", sheet_name="邮编映射")
+    df = df.merge(sla_zone_df, on="收件人邮编", how="left")
+    
     # Client side SLA requirements
     sla_config = {
         "Zone1": {
@@ -184,10 +188,6 @@ def run_analysis(
         '集配站名称': '集配站',
         '配送站名称': '配送站'
     })
-
-    # Add Zone Info
-    sla_zone_df = pd.read_excel("sla_zone.xlsx", sheet_name="邮编映射")
-    df = df.merge(sla_zone_df, on="收件人邮编", how="left")
     
     # Unify time cols format
     time_cols=[
