@@ -41,183 +41,82 @@ def make_excel_sheet_name(raw_name, used_names: set, max_len: int = 31) -> str:
     used_names.add(candidate)
     return candidate
 
-def run_cainiao_analysis(
+def run_analysis(
     df,
     sla_should_date=None,
     cut_off=None
 ):  
     # Client side SLA requirements
     sla_config = {
-        "AE": {
-            "start_col": "SLA关配交接时间",
-            "end_col": "首次派送时间",
-            "hours_CA": 48,
-            "days_CA": 2,
-            "hours_nonCA": 96,
-            "days_nonCA": 4,
-            "target_rate": 0.95,
-            "mode": "broad", # 广义妥投
-            "total_count": len(df['客户'] == 'AE')
-        },
-        "CBO": {
+        "Zone1": {
             "start_col": "首分拨首次入库时间",
             "end_col": "首次派送时间",
-            "hours_CA": 72,
-            "days_CA": 3,
-            "hours_nonCA": 96,
-            "days_nonCA": 4,
+            "hours": 48,
+            "days": 2,
             "target_rate": 0.95,
             "mode": "broad",
-            "total_count": len(df['客户'] == 'CBO')
+            "total_count": len(df["收件人邮编集"] == "Zone1")
         },
-        "FBT": {
+        "Zone2": {
             "start_col": "首分拨首次入库时间",
-            "end_col": "签收成功时间",
+            "end_col": "首次派送时间",
             "hours": 48,
-            "days": 2, 
+            "days": 2,
             "target_rate": 0.95,
-            "mode": "narrow",  # 狭义妥投
-            "total_count": len(df['客户'] == 'FBT')
+            "mode": "broad",
+            "total_count": len(df["收件人邮编集"] == "Zone2")
         },
-        "CBT": {
+        "Zone3": {
             "start_col": "首分拨首次入库时间",
             "end_col": "首次派送时间",
             "hours": 72,
-            "days": 3, 
+            "days": 3,
             "target_rate": 0.95,
-            "mode": "narrow",
-            "total_count": len(df['客户'] == 'CBT')
+            "mode": "broad",
+            "total_count": len(df["收件人邮编集"] == "Zone3")
         },
-        "SKA2": {
-            "start_col": "SLA关配交接时间",
-            "end_col": "签收成功时间",
-            "hours": 120,
-            "days": 5, 
-            "target_rate": 0.98,
-            "mode": "narrow",
-            "total_count": len(df['客户'] == 'SKA2')
-        },
-        "TE": {
-            "start_col": "首分拨首次入库时间",
-            "end_col": "签收成功时间",
-            "hours_z12": 72,
-            "days_z12": 3, 
-            "hours_z34": 120,
-            "days_z34": 5, 
-            "target_rate": 0.95,
-            "mode": "narrow",
-            "total_count": len(df['客户'] == 'TE')
-        },
-        "YW": {
-            "start_col": "首分拨首次入库时间",
-            "end_col": "签收成功时间",
-            "hours": 84,
-            "days": 3, 
-            "target_rate": 0.95,
-            "mode": "narrow",
-            "total_count": len(df['客户'] == 'YW')
-        },
-        "HTE": {
+        "Zone4": {
             "start_col": "首分拨首次入库时间",
             "end_col": "首次派送时间",
-            "hours_CA": 72,
-            "days_CA": 3,
-            "hours_nonCA": 120,
-            "days_nonCA": 5,
+            "hours": 96,
+            "days": 4,
             "target_rate": 0.95,
-            "mode": "broad", # 广义妥投
-            "total_count": len(df['客户'] == 'HTE')
-        },
-        "WH": {
-            "start_col": "首分拨首次入库时间",
-            "end_col": "签收成功时间",
-            "hours": 120,
-            "days": 5,
-            "target_rate": 0.96,
-            "mode": "narrow", # 狭义妥投
-            "total_count": len(df['客户'] == 'WH')
-        },
-        "WHUS": {
-            "start_col": "首分拨首次入库时间",
-            "end_col": "签收成功时间",
-            "hours": 120,
-            "days": 5,
-            "target_rate": 0.96,
-            "mode": "narrow", # 狭义妥投
-            "total_count": len(df['客户'] == 'WHUS')
-        },
-        "WHUS-4PX": {
-            "start_col": "首分拨首次入库时间",
-            "end_col": "签收成功时间",
-            "hours": 120,
-            "days": 5,
-            "target_rate": 0.96,
-            "mode": "narrow", # 狭义妥投
-            "total_count": len(df['客户'] == 'WHUS-4PX')
+            "mode": "broad",
+            "total_count": len(df["收件人邮编集"] == "Zone4")
         }
     }
     
-    # CA order or not
-    def not_CA_order(row) -> bool:
-        return row["集配站"] in ["HUB_LAX_LAS", "HUB_LAX_PHX"]
-
-    # Zone 1 & 2 or not
-    def not_z12_order(row) -> bool:
-        return row["集配站"] in ["HUB_LAX_LAS", "HUB_LAX_PHX", "HUB_LAX_BAK", "HUB_LAX_SAC", "HUB_LAX_SFO", "HUB_LAX_UIC"]
-    
-    # SLA total hours by client and area
+    # SLA total hours by zone
     def get_sla_limit_hours(row):
-        client = row["客户"]
-        cfg = sla_config.get(client)
-        if cfg is None:
+        sla_zone = row["收件人邮编集"]
+        zone = sla_config.get(sla_zone)
+        if zone is None:
             return np.nan
-        
-        if "hours_CA" in cfg:
-            if not_CA_order(row):
-                return cfg["hours_nonCA"]
-            else:
-                return cfg["hours_CA"]
-        elif "hours_z12" in cfg:
-            if not_z12_order(row):
-                return cfg["hours_z12"]
-            else:
-                return cfg["hours_z34"]
-                
-        return cfg.get("hours", np.nan)
+        else:
+            return zone["hours"]
     
     # SLA total days round down
     def get_sla_limit_days(row):
-        client = row["客户"]
-        cfg = sla_config.get(client)
-        if cfg is None:
+        sla_zone = row["收件人邮编集"]
+        zone = sla_config.get(sla_zone)
+        if zone is None:
             return np.nan
-        
-        if "days_CA" in cfg:
-            if not_CA_order(row):
-                return cfg["days_nonCA"]
-            else:
-                return cfg["days_CA"]
-        elif "days_z12" in cfg:
-            if not_z12_order(row):
-                return cfg["days_z12"]
-            else:
-                return cfg["days_z34"]
-        
-        return cfg.get("days", np.nan)
+        else:
+            return zone["days"]
     
     # Calculate time difference
     def hours_diff_values(end_time, start_time):
         return (end_time - start_time).total_seconds() / 3600
     
-    # SLA start and end time by client
+    # SLA start and end time by zone
     def get_sla_start_end(row):
-        client = row["客户"]
-        cfg = sla_config.get(client)
-        if cfg is None:
+        sla_zone = row["收件人邮编集"]
+        zone = sla_config.get(sla_zone)
+        if zone is None:
             return (np.nan, np.nan)
         
-        start_col = cfg["start_col"]
-        end_col   = cfg["end_col"]
+        start_col = zone["start_col"]
+        end_col   = zone["end_col"]
         return (row.get(start_col), row.get(end_col))
     
     # Fulfill SLA or not
@@ -228,10 +127,10 @@ def run_cainiao_analysis(
         if pd.isna(start_time) or np.isnan(sla_hours):
             due_time = pd.NaT
         else:
-            if row["客户"] in ["FBT", "CBT", "AE", "HTE", "WHUS", "WHUS-4PX"]:
+            if time(00,00,00) <= start_time.time() <= time(16,00,00):
                 due_time = (start_time + timedelta(hours=float(sla_hours))).normalize() + pd.Timedelta(hours=23, minutes=59, seconds=59)
             else:
-                due_time = start_time + timedelta(hours=float(sla_hours))
+                due_time = (start_time + timedelta(hours=float(sla_hours))).normalize() + pd.Timedelta(hours=23, minutes=59, seconds=59) + timedelta(days=1)
         
         if pd.isna(start_time) or pd.isna(end_time):
             return pd.Series({
@@ -285,6 +184,10 @@ def run_cainiao_analysis(
         '集配站名称': '集配站',
         '配送站名称': '配送站'
     })
+
+    # Add Zone Info
+    sla_zone_df = pd.read_excel("sla_zone.xlsx", sheet_name="邮编映射")
+    df = df.merge(sla_zone_df, on="收件人邮编", how="left")
     
     # Unify time cols format
     time_cols=[
@@ -305,14 +208,6 @@ def run_cainiao_analysis(
         if i in df.columns:
             df[i] = pd.to_datetime(df[i], errors='coerce')
     
-    # Update AE SLA start time for customhouse time after 9pm
-    df["SLA关配交接时间"] = df["关配交接时间"]
-    
-    mask_late = (df["客户"] == "AE") & df["关配交接时间"].notna() & (df["关配交接时间"] > pd.to_datetime("21:00:00"))
-    df.loc[mask_late, "SLA关配交接时间"] = (
-        df.loc[mask_late, "关配交接时间"].dt.normalize() + pd.Timedelta(days=1)
-    )
-    
     # Filter only the orders for specified SLA period
     sla_result = df.apply(calc_sla_row, axis=1)
     df = pd.concat([df, sla_result], axis=1)
@@ -330,12 +225,12 @@ def run_cainiao_analysis(
     
     df = df[mask].copy()
     
-    # Update total_count of SLA should orders
-    client_counts = df["客户"].value_counts()
+    # Update total_count of SLA should orders by zone
+    zone_counts = df["收件人邮编集"].value_counts()
     
-    for client, cnt in client_counts.items():
-        if client in sla_config:
-            sla_config[client]["total_count"] = int(cnt)
+    for zone, cnt in zone_counts.items():
+        if zone in sla_config:
+            sla_config[zone]["total_count"] = int(cnt)
     
     # Merge sorting time
     pos = df.columns.get_loc('首分拨首次自动分拣时间')
@@ -346,7 +241,7 @@ def run_cainiao_analysis(
     ])
     df.insert(pos, '首分拨首次分拣时间', df.pop('首分拨首次分拣时间'))
     
-    client_sla_summary = {}
+    zone_sla_summary = {}
     
     for client, group in df.groupby("客户"):
         total = len(group)
@@ -354,10 +249,7 @@ def run_cainiao_analysis(
         ok = total - fail
         rate = ok / total
         target = sla_config[client]["target_rate"]
-        if client in ["FBT", "SKA2", "YW", "TE", "WHUS", "WHUS-4PX"]:
-            print(f"{client}: 总单量 {total}，狭义不达 {total - ok} 单，不达率 {(1-rate)*100:.2f}%")
-        else:
-            print(f"{client}: 总单量 {total}，广义不达 {total - ok} 单，不达率 {(1-rate)*100:.2f}%")
+        print(f"{client}: 总单量 {total}，广义不达 {total - ok} 单，不达率 {(1-rate)*100:.2f}%")
         
         client_sla_summary[client] = {
             "total": total,
@@ -411,16 +303,16 @@ def run_cainiao_analysis(
                     return ("DSP领件两日内未投递（需警告）", "配送")
                 else:
                     return("DSP领件未及时投递", "配送")
-            else:
-                if row["客户"] in ["FBT", "SKA2", "YW", "TE", "WHUS", "WHUS-4PX"]:
-                    if pd.isna(row["签收成功时间"]):
-                        return ("DSP因某些原因未投递成功（需确认）", "配送")
-                    elif row["耗时_司机领件→签收成功"] > 16:
-                        return ("DSP达成投递要求但超时", "配送")
-                    else:
-                        return ("DSP达成投递要求但略微超时，存在潜在问题（需确认）", "待确认")
-                else:
-                    return ("DSP达成投递要求但略微超时，存在潜在问题（需确认）", "待确认")
+            # else:
+            #     if row["客户"] in ["FBT", "SKA2", "YW", "TE", "WHUS", "WHUS-4PX"]:
+            #         if pd.isna(row["签收成功时间"]):
+            #             return ("DSP因某些原因未投递成功（需确认）", "配送")
+            #         elif row["耗时_司机领件→签收成功"] > 16:
+            #             return ("DSP达成投递要求但超时", "配送")
+            #         else:
+            #             return ("DSP达成投递要求但略微超时，存在潜在问题（需确认）", "待确认")
+            #     else:
+            #         return ("DSP达成投递要求但略微超时，存在潜在问题（需确认）", "待确认")
     
     def missort_or_not(row):
         if row["是否错分"] == "是":
