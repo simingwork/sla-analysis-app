@@ -8,7 +8,7 @@ from cainiao_sla_analysis import run_analysis as cainiao_analysis
 
 st.set_page_config(page_title="客户SLA未达分析", layout="wide")
 
-st.title("📦 客户SLA未达分析工具")
+st.title("📦 SLA未达分析工具")
 st.markdown("""
 ### **使用步骤：**
 1. 上传 1 个或多个 Excel 文件
