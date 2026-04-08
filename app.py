@@ -11,10 +11,11 @@ st.title("📦 客户SLA未达分析工具")
 st.markdown("""
 ### **使用步骤：**
 1. 上传 1 个或多个 Excel 文件
-2. 选择 SLA should date（时间段 / 单时间点）
-3. 设置 cut-off 时间
-4. 点击「开始分析」
-5. 下载分析结果 Excel
+2. 选择SLA要求（中台/客户）
+3. 选择 SLA should date（时间段 / 单时间点）
+4. 设置 cut-off 时间
+5. 点击「开始分析」
+6. 下载分析结果 Excel
 """)
 st.caption("上传Excel → 设置 SLA should date / cut off → 生成结果Excel下载")
 
