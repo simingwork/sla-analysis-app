@@ -211,7 +211,7 @@ def run_analysis(
             else:
                 return cfg["days_CA"]
         elif "days_z12" in cfg:
-            if not_z12_order(row):
+            if get_sla_zone(row) in ["Zone1", "Zone2"]:
                 return cfg["days_z12"]
             else:
                 return cfg["days_z34"]
