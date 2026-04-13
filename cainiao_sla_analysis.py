@@ -52,7 +52,7 @@ def run_analysis(
     # Zone SLA requirements
     sla_config = {
         "Zone1": {
-            "start_col": "首分拨首次入库时间",
+            "start_col": ["关配交接时间", "首分拨首次入库时间"],
             "end_col": "首次派送时间",
             "hours": 48,
             "days": 2,
@@ -61,7 +61,7 @@ def run_analysis(
             "total_count": len(df["收件人邮编集"] == "Zone1")
         },
         "Zone2": {
-            "start_col": "首分拨首次入库时间",
+            "start_col":  ["关配交接时间", "首分拨首次入库时间"],
             "end_col": "首次派送时间",
             "hours": 48,
             "days": 2,
@@ -70,7 +70,7 @@ def run_analysis(
             "total_count": len(df["收件人邮编集"] == "Zone2")
         },
         "Zone3": {
-            "start_col": "首分拨首次入库时间",
+            "start_col":  ["关配交接时间", "首分拨首次入库时间"],
             "end_col": "首次派送时间",
             "hours": 72,
             "days": 3,
@@ -79,7 +79,7 @@ def run_analysis(
             "total_count": len(df["收件人邮编集"] == "Zone3")
         },
         "Zone4": {
-            "start_col": "首分拨首次入库时间",
+            "start_col":  ["关配交接时间", "首分拨首次入库时间"],
             "end_col": "首次派送时间",
             "hours": 96,
             "days": 4,
@@ -92,7 +92,7 @@ def run_analysis(
     # Client side SLA requirements
     client_config = {
         "AE": {
-            "start_col": "SLA关配交接时间",
+            "start_col": "关配交接时间",
             "end_col": "首次派送时间",
             "hours_CA": 48,
             "days_CA": 2,
@@ -132,7 +132,7 @@ def run_analysis(
             "total_count": len(df['客户'] == 'CBT')
         },
         "SKA2": {
-            "start_col": "SLA关配交接时间",
+            "start_col": "关配交接时间",
             "end_col": "签收成功时间",
             "hours": 120,
             "days": 5, 
@@ -235,16 +235,32 @@ def run_analysis(
     def hours_diff_values(end_time, start_time):
         return (end_time - start_time).total_seconds() / 3600
     
-    # SLA start and end time by zone
+    # # SLA start and end time by zone
+    # def get_sla_start_end(row):
+    #     sla_zone = row["收件人邮编集"]
+    #     zone = sla_config.get(sla_zone)
+    #     if zone is None:
+    #         return (np.nan, np.nan)
+        
+    #     start_col = zone["start_col"]
+    #     end_col = zone["end_col"]
+    #     return (row.get(start_col), row.get(end_col))
+
     def get_sla_start_end(row):
         sla_zone = row["收件人邮编集"]
         zone = sla_config.get(sla_zone)
+
         if zone is None:
             return (np.nan, np.nan)
-        
-        start_col = zone["start_col"]
-        end_col   = zone["end_col"]
-        return (row.get(start_col), row.get(end_col))
+
+        start_times = [row.get(col) for col in zone["start_col"]]
+        start_times = [t for t in start_times if pd.notna(t)]
+        if len(start_times) == 0:
+            start_time = np.nan
+        else:
+            start_time = min(start_times)
+        end_time = row.get(zone["end_col"])
+        return start_time, end_time
     
     # Fulfill SLA or not
     def calc_sla_row(row):
