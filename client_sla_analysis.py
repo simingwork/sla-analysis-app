@@ -496,7 +496,7 @@ def run_analysis(
     
     # Run the reason analysis through df
     results = []
-    if fail_df != []:
+    if len(fail_df) == 0:
         for idx, row in fail_df.iterrows():
             # if row["客户"] not in fail_clients:
             #     reason, duty = ("客户时效SLA达标不追究问题", "无")
