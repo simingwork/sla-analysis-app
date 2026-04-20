@@ -496,27 +496,27 @@ def run_analysis(
     
     # Run the reason analysis through df
     results = []
-    
-    for idx, row in fail_df.iterrows():
-        # if row["客户"] not in fail_clients:
-        #     reason, duty = ("客户时效SLA达标不追究问题", "无")
-        # else:
-        if pd.isna(row["首分拨首次入库时间"]):
-            reason, duty = ("分拨未入库", "分拨")
-        else:
-            if row["客户"] in ["AE", "SKA2"]:
-                if row["耗时_关配→分拨入库"] > 24:
-                    reason, duty = ("分拨入库过晚", "分拨")
+    if fail_df != []:
+        for idx, row in fail_df.iterrows():
+            # if row["客户"] not in fail_clients:
+            #     reason, duty = ("客户时效SLA达标不追究问题", "无")
+            # else:
+            if pd.isna(row["首分拨首次入库时间"]):
+                reason, duty = ("分拨未入库", "分拨")
+            else:
+                if row["客户"] in ["AE", "SKA2"]:
+                    if row["耗时_关配→分拨入库"] > 24:
+                        reason, duty = ("分拨入库过晚", "分拨")
+                    else:
+                        reason, duty = sort_or_not(row)
                 else:
                     reason, duty = sort_or_not(row)
-            else:
-                reason, duty = sort_or_not(row)
-    
-        results.append({
-            "index": idx,
-            "链路问题归因": reason,
-            "主要责任方": duty
-        })
+        
+            results.append({
+                "index": idx,
+                "链路问题归因": reason,
+                "主要责任方": duty
+            })
     
     result_df = pd.DataFrame(results)
     
