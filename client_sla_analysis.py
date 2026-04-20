@@ -177,7 +177,7 @@ def run_analysis(
             "days_z34": 6,
             "hours_z5": 192,
             "days_z5": 8,
-            "target_rate": 0.95,
+            "target_rate": 0.90,
             "mode": "narrow", # 狭义妥投
             "total_count": len(df['客户'] == 'EZG')
         }
