@@ -167,6 +167,19 @@ def run_analysis(
             "target_rate": 0.95,
             "mode": "narrow", # 狭义妥投
             "total_count": len(df['客户'] == 'CKY')
+        },
+        "EZG": {
+            "start_col": "首分拨首次入库时间",
+            "end_col": "签收成功时间",
+            "hours_z12": 120,
+            "days_z12": 5,
+            "hours_z34": 144,
+            "days_z34": 6,
+            "hours_z5": 192,
+            "days_z5": 8,
+            "target_rate": 0.95,
+            "mode": "narrow", # 狭义妥投
+            "total_count": len(df['客户'] == 'EZG')
         }
     }
     
