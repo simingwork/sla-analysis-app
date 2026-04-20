@@ -496,7 +496,7 @@ def run_analysis(
     
     # Run the reason analysis through df
     results = []
-    if len(fail_df) == 0:
+    if len(fail_df) != 0:
         for idx, row in fail_df.iterrows():
             # if row["客户"] not in fail_clients:
             #     reason, duty = ("客户时效SLA达标不追究问题", "无")
@@ -521,7 +521,8 @@ def run_analysis(
     result_df = pd.DataFrame(results)
     
     # Merge result into df
-    fail_df = fail_df.merge(result_df, left_index=True, right_on="index", how="left").drop(columns=["index"])
+    if len(fail_df) != 0:
+        fail_df = fail_df.merge(result_df, left_index=True, right_on="index", how="left").drop(columns=["index"])
     
     # ===== 1. Summary for all orders together =====
     total_orders = len(df)
