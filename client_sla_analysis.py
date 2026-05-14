@@ -346,6 +346,7 @@ def run_analysis(
     # Filter only the orders for specified SLA period
     sla_result = df.apply(calc_sla_row, axis=1)
     df = pd.concat([df, sla_result], axis=1)
+    df.dropna(subset=["SLA截止时间"], inplace=True)
     df["SLA截止时间"] = pd.to_datetime(df["SLA截止时间"], errors='coerce')
     
     if isinstance(sla_should_date, tuple):
